@@ -1,0 +1,41 @@
+name: "Flutter CI Checks"
+author: "DevGlitch"
+description: "All-in-one Flutter CI Action to run analyzer, tests, and check outdated packages — with optional PR comments to keep your team in sync."
+
+branding:
+  icon: "check-circle"
+  color: "green"
+
+inputs:
+  check_outdated:
+    description: "Check for outdated dependencies using `flutter pub outdated`"
+    required: false
+    default: "true"
+
+  analyze:
+    description: "Run Dart static analysis and linter checks via `flutter analyze`"
+    required: false
+    default: "true"
+
+  run_tests:
+    description: "Run unit and widget tests from the `test/` directory using `flutter test`"
+    required: false
+    default: "true"
+
+  comment_pr:
+    description: "Post a CI summary as a comment on pull requests"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: python3 ${{ github.action_path }}/entrypoint.py
+      env:
+        CHECK_OUTDATED: ${{ inputs.check_outdated }}
+        ANALYZE: ${{ inputs.analyze }}
+        RUN_TESTS: ${{ inputs.run_tests }}
+        COMMENT_PR: ${{ inputs.comment_pr }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.pull_request.number || '' }}
