@@ -100,7 +100,7 @@ def run_outdated():
                 f"| {pkg['name']} | {curr} | {bump_emoji(curr, up)} {up} | {bump_emoji(curr, res)} {res}| {bump_emoji(curr, latest)} {latest}|\n"
             )
         report_lines.append(
-            "\nLegend: 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown\n"
+            "\nLegend: 🟢 same • 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown\n"
         )
 
     except Exception as e:
@@ -232,9 +232,9 @@ def bump_emoji(old, new):
             return "🟠"
         elif new_v.micro > old_v.micro:
             return "🟡"
-        elif new_v != old_v:
-            return "⚪"
+        elif new_v == old_v:
+            return "🟢"
         else:
-            return "⚠️"
+            return "⚪️"
     except Exception:
         return "⚠️"
