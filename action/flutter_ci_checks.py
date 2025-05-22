@@ -70,7 +70,7 @@ def run_outdated():
             resolvable = safe_version(pkg.get("resolvable"))
             latest = safe_version(pkg.get("latest"))
 
-            if upgradable and upgradable != current:
+            if latest and latest != current:
                 outdated.append(
                     {
                         "name": pkg.get("package", ""),
