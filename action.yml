@@ -1,6 +1,6 @@
 name: "Flutter CI Checks"
 author: "DevGlitch"
-description: "All-in-one Flutter CI Action to run analyzer, tests, and check outdated packages — with optional PR comments to keep your team in sync."
+description: "Flutter CI Action to run analyzer, tests, and check outdated packages — with optional PR comment to keep your team in sync."
 
 branding:
   icon: "check-circle"
