@@ -97,14 +97,29 @@ def run_outdated():
             res = pkg["resolvable"]
             latest = pkg["latest"]
             report_lines.append(
-                f"| {pkg['name']} | {curr} | {up} {bump_emoji(curr, up)} | {res} {bump_emoji(curr, res)} | {latest} {bump_emoji(curr, latest)} |\n"
+                f"| {pkg['name']} | {curr} | {bump_emoji(curr, up)} {up} | {bump_emoji(curr, res)} {res}| {bump_emoji(curr, latest)} {latest}|\n"
             )
         report_lines.append(
-            "\n_Legend: 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown_\n"
+            "\nLegend: 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown\n"
         )
 
     except Exception as e:
         report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
+
+
+def run_analyze():
+    """Run `flutter analyze` to check for issues."""
+    stdout, stderr = run_cmd(
+        f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False
+    )
+
+    if stderr:
+        report_lines.append("### 🔍 Lint Summary\n")
+        report_lines.append("```\n" + stderr.strip() + "\n```\n")
+
+    if stdout:
+        report_lines.append("### ❗ Lint Issues\n")
+        report_lines.append("```\n" + stdout.strip() + "\n```\n")
 
 
 def run_tests():
@@ -154,26 +169,6 @@ def run_tests():
     report_lines.append("```\n" + stdout.strip() + "\n```\n")
 
 
-def run_analyze():
-    """Run `flutter analyze` to check for issues."""
-    stdout, stderr = run_cmd(
-        f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False
-    )
-
-    if stderr:
-        report_lines.append("#### 🔍 Lint Summary\n")
-        report_lines.append("```\n" + stderr.strip() + "\n```\n")
-
-    if "•" in stdout or "warning" in stdout.lower():
-        report_lines.append("❌ **Run analysis found issues**\n")
-    else:
-        report_lines.append("✅ **No lint issues found**\n")
-
-    if stdout:
-        report_lines.append("#### ❗ Lint Issues\n")
-        report_lines.append("```\n" + stdout.strip() + "\n```\n")
-
-
 def run_ci_step(label, func, env_var):
     """Run a CI step and handle errors."""
     if os.getenv(env_var, "true").lower() != "true":
@@ -183,6 +178,15 @@ def run_ci_step(label, func, env_var):
         func()
     except Exception as e:
         report_lines.append(f"\n❌ **{label} failed:** {e}\n")
+
+
+def run_flutter_ci():
+    """Main function to run the Flutter CI checks."""
+    run_pub_get()
+    run_ci_step("Check for outdated packages", run_outdated, "CHECK_OUTDATED")
+    run_ci_step("Run analysis", run_analyze, "ANALYZE")
+    run_ci_step("Run tests", run_tests, "RUN_TESTS")
+    maybe_comment_pr()
 
 
 def comment_pr():
@@ -210,15 +214,6 @@ def maybe_comment_pr():
         print("💬 Skipping PR comment (COMMENT_PR is false)")
         return
     comment_pr()
-
-
-def run_flutter_ci():
-    """Main function to run the Flutter CI checks."""
-    run_pub_get()
-    run_ci_step("Check for outdated packages", run_outdated, "CHECK_OUTDATED")
-    run_ci_step("Run analysis", run_analyze, "ANALYZE")
-    run_ci_step("Run tests", run_tests, "RUN_TESTS")
-    maybe_comment_pr()
 
 
 def safe_version(val):
