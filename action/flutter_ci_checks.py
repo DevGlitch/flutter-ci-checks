@@ -109,24 +109,29 @@ def run_outdated():
 
 def run_analyze():
     """Run `flutter analyze` to check for issues."""
-    stdout, stderr = run_cmd(
-        f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False
-    )
+    try:
+        stdout, stderr = run_cmd(
+            f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False
+        )
 
-    if stderr:
-        report_lines.append("### 🔍 Lint Summary\n")
-        report_lines.append("```\n" + stderr.strip() + "\n```\n")
+        if stderr:
+            report_lines.append("### 🔍 Lint Summary\n")
+            report_lines.append("```\n" + stderr.strip() + "\n```\n")
 
-    if stdout:
-        report_lines.append("### ❗ Lint Issues\n")
-        report_lines.append("```\n" + stdout.strip() + "\n```\n")
+        if stdout:
+            report_lines.append("### ❗ Lint Issues\n")
+            report_lines.append("```\n" + stdout.strip() + "\n```\n")
+    except Exception as e:
+        report_lines.append(f"❌ **Run analysis failed:** {e}\n")
 
 
 def run_tests():
     """Run `flutter test` and generate a coverage report."""
-    stdout, _ = run_cmd(f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests")
-
     try:
+        stdout, _ = run_cmd(
+            f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests"
+        )
+
         with open("coverage/lcov.info", "r") as f:
             lcov = f.read()
 
@@ -141,20 +146,7 @@ def run_tests():
 
         if total_lines > 0:
             coverage_percent = (covered_lines / total_lines) * 100
-
-            if coverage_percent >= 90:
-                color = "🟢"
-                msg = "Solid coverage – nice work!"
-            elif coverage_percent >= 75:
-                color = "🟡"
-                msg = "Not bad, just a few gaps."
-            elif coverage_percent >= 50:
-                color = "🟠"
-                msg = "Kinda patchy — could use more tests."
-            else:
-                color = "🔴"
-                msg = "Yikes. Test coverage needs love."
-
+            color, msg = get_coverage_feedback(coverage_percent)
             report_lines.append("### 🧪 Test Coverage\n")
             report_lines.append(f"**{coverage_percent:.2f}%** {color} {msg}\n")
         else:
@@ -164,9 +156,23 @@ def run_tests():
         report_lines.append(
             "### 🧪 Test Coverage\n⚠️ `lcov.info` not found — coverage missing.\n"
         )
+    except Exception as e:
+        report_lines.append(f"❌ **Run tests failed:** {e}\n")
 
     report_lines.append("### 🧪 Test Results\n")
     report_lines.append("```\n" + stdout.strip() + "\n```\n")
+
+
+def get_coverage_feedback(coverage_percent):
+    """Get feedback based on coverage percentage."""
+    if coverage_percent >= 90:
+        return "🟢", "Solid coverage – nice work!"
+    elif coverage_percent >= 75:
+        return "🟡", "Not bad, just a few gaps."
+    elif coverage_percent >= 50:
+        return "🟠", "Kinda patchy — could use more tests."
+    else:
+        return "🔴", "Yikes. Test coverage needs love."
 
 
 def run_ci_step(label, func, env_var):
