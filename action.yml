@@ -27,6 +27,10 @@ inputs:
     required: false
     default: "true"
 
+  github_token:
+    description: "GitHub token for authentication, required only for posting comments on pull requests"
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -37,5 +41,5 @@ runs:
         ANALYZE: ${{ inputs.analyze }}
         RUN_TESTS: ${{ inputs.run_tests }}
         COMMENT_PR: ${{ inputs.comment_pr }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         PR_NUMBER: ${{ github.event.pull_request.number || '' }}
