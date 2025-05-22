@@ -11,9 +11,12 @@ FLUTTER_CMD = "flutter"
 
 def run_cmd(cmd, check=True, label=None):
     """Run a command and capture its output."""
+    include_in_report = label and label != "Resolve dependencies (pub get)"
+
     if label:
         print(f"::group::{label}")
-        report_lines.append(f"## {label}\n")
+        if include_in_report:
+            report_lines.append(f"## {label}\n")
 
     print(f"➤ Running: {cmd}")
     result = subprocess.run(cmd, shell=True, text=True, capture_output=True)
@@ -36,7 +39,7 @@ def run_cmd(cmd, check=True, label=None):
 
 def run_pub_get():
     """Run `flutter pub get` to resolve dependencies."""
-    run_cmd(f"{FLUTTER_CMD} pub get", label=None)
+    run_cmd(f"{FLUTTER_CMD} pub get", label="Resolve dependencies (pub get)")
 
 
 def run_outdated():
