@@ -66,7 +66,8 @@ def run_outdated():
                 continue
 
             current = safe_version(pkg.get("current"))
-            upgradable = safe_version(pkg.get("resolvable"))
+            upgradable = safe_version(pkg.get("upgradable"))
+            resolvable = safe_version(pkg.get("resolvable"))
             latest = safe_version(pkg.get("latest"))
 
             if upgradable and upgradable != current:
@@ -75,6 +76,7 @@ def run_outdated():
                         "name": pkg.get("package", ""),
                         "current": current,
                         "upgradable": upgradable,
+                        "resolvable": resolvable,
                         "latest": latest,
                     }
                 )
@@ -83,15 +85,23 @@ def run_outdated():
             report_lines.append("✅ All packages are up to date.\n")
             return
 
-        report_lines.append("| Package | Current | Upgradable | Latest |\n")
-        report_lines.append("|---------|---------|------------|--------|\n")
+        report_lines.append(
+            "| Package | Current | Upgradable | Resolvable | Latest |\n"
+        )
+        report_lines.append(
+            "|---------|---------|------------|------------|--------|\n"
+        )
         for pkg in outdated:
-            emoji = bump_emoji(pkg["current"], pkg["upgradable"])
+            curr = pkg["current"]
+            up = pkg["upgradable"]
+            res = pkg["resolvable"]
+            latest = pkg["latest"]
             report_lines.append(
-                f"| {pkg['name']} | {pkg['current']} | {emoji} {pkg['upgradable']} | {pkg['latest']} |\n"
+                f"| {pkg['name']} | {curr} | {up} {bump_emoji(curr, up)} | {res} {bump_emoji(curr, res)} | {latest} {bump_emoji(curr, latest)} |\n"
             )
-        report_lines.append("\n")
-        report_lines.append("\n_Legend: 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown_\n")
+        report_lines.append(
+            "\n_Legend: 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown_\n"
+        )
 
     except Exception as e:
         report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
@@ -203,6 +213,7 @@ def maybe_comment_pr():
 
 
 def run_flutter_ci():
+    """Main function to run the Flutter CI checks."""
     run_pub_get()
     run_ci_step("Check for outdated packages", run_outdated, "CHECK_OUTDATED")
     run_ci_step("Run analysis", run_analyze, "ANALYZE")
@@ -211,10 +222,12 @@ def run_flutter_ci():
 
 
 def safe_version(val):
+    """Safely extract the version from a value."""
     return val.get("version", "") if isinstance(val, dict) else ""
 
 
 def bump_emoji(old, new):
+    """Determine the emoji based on version bump type."""
     try:
         old_v = version.parse(old)
         new_v = version.parse(new)
