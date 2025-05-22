@@ -3,7 +3,7 @@ import subprocess
 import json
 import sys
 
-report_lines = ["## 🛠️ Flutter CI Report\n"]
+report_lines = ["# 🛠️ Flutter CI Checks Report\n"]
 
 FLUTTER_CMD = "flutter"
 
@@ -12,7 +12,7 @@ def run_cmd(cmd, check=True, label=None):
     """Run a command and capture its output."""
     if label:
         print(f"::group::{label}")
-        report_lines.append(f"### {label}\n")
+        report_lines.append(f"## {label}\n")
 
     print(f"➤ Running: {cmd}")
     result = subprocess.run(cmd, shell=True, text=True, capture_output=True)
@@ -35,7 +35,7 @@ def run_cmd(cmd, check=True, label=None):
 
 def run_pub_get():
     """Run `flutter pub get` to resolve dependencies."""
-    run_cmd(f"{FLUTTER_CMD} pub get", label="None")
+    run_cmd(f"{FLUTTER_CMD} pub get", label=None)
 
 
 def run_outdated():
@@ -108,15 +108,15 @@ def run_tests():
                 color = "🔴"
                 msg = "Yikes. Test coverage needs love."
 
-            report_lines.append("#### 🧪 Test Coverage\n")
-            report_lines.append(f"**{coverage_percent:.2f}%**  \n{color} {msg}\n")
+            report_lines.append("### 🧪 Test Coverage\n")
+            report_lines.append(f"**{coverage_percent:.2f}%** {color} {msg}\n")
         else:
             report_lines.append("⚠️ No coverage data found.\n")
 
     except FileNotFoundError:
-        report_lines.append("#### 🧪 Test Coverage\n⚠️ `lcov.info` not found — coverage missing.\n")
+        report_lines.append("### 🧪 Test Coverage\n⚠️ `lcov.info` not found — coverage missing.\n")
 
-    report_lines.append("#### 🧪 Test Results\n")
+    report_lines.append("### 🧪 Test Results\n")
     report_lines.append("```\n" + output.strip() + "\n```\n")
 
 
@@ -125,15 +125,21 @@ def run_analyze():
     try:
         stdout, stderr = run_cmd(f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis")
 
-        report_lines.append("#### 🔍 Lint Summary\n")
         if stderr:
-            report_lines.append("```\n" + stderr + "\n```\n")
+            report_lines.append("#### 🔍 Lint Summary\n")
+            report_lines.append("```\n" + stderr.strip() + "\n```\n")
 
-        report_lines.append("#### ❗ Lint Issues\n")
-        report_lines.append("```\n" + stdout + "\n```\n")
+        if stdout:
+            report_lines.append("#### ❗ Lint Issues\n")
+            report_lines.append("```\n" + stdout.strip() + "\n```\n")
 
-    except Exception:
-        report_lines.append("❌ **Run analysis found issues**\n")
+        if "•" in stdout or "warning" in stdout.lower():
+            report_lines.append("❌ **Run analysis found issues**\n")
+        else:
+            report_lines.append("✅ **No lint issues found**\n")
+
+    except Exception as e:
+        report_lines.append(f"❌ **Run analysis failed:** {str(e)}\n")
 
 
 def run_ci_step(label, func, env_var):
