@@ -90,6 +90,8 @@ def run_outdated():
             report_lines.append(
                 f"| {pkg['name']} | {pkg['current']} | {emoji} {pkg['upgradable']} | {pkg['latest']} |\n"
             )
+        report_lines.append("\n")
+        report_lines.append("\n_Legend: 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown_\n")
 
     except Exception as e:
         report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
@@ -223,8 +225,8 @@ def bump_emoji(old, new):
         elif new_v.micro > old_v.micro:
             return "🟡"
         elif new_v != old_v:
-            return "🟢"
+            return "⚪"
         else:
-            return ""
+            return "⚠️"
     except Exception:
         return "⚠️"
