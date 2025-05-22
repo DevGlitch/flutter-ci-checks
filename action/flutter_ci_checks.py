@@ -39,35 +39,30 @@ def run_pub_get():
 
 
 def run_outdated():
-    """Run `flutter pub outdated` to check for outdated packages."""
+    """Run `flutter pub outdated` and check for outdated packages."""
     stdout, stderr = run_cmd(f"{FLUTTER_CMD} pub outdated --json", label="Check for outdated packages")
-
     raw_output = stdout if stdout.strip().startswith("{") else stderr
-
-    # Debugging output  # TODO: remove this in production
-    print("🔍 RAW outdated output:")
-    print(raw_output)
 
     try:
         data = json.loads(raw_output)
-        if not isinstance(data, dict):
-            raise ValueError(f"Expected dict, got {type(data).__name__}")
+        packages = data.get("packages", [])
 
-        packages = data.get("packages")
-        if not isinstance(packages, dict):
-            raise ValueError("Missing or invalid 'packages' field")
+        if not isinstance(packages, list):
+            raise ValueError("Expected 'packages' to be a list")
 
+        outdated = []
+        for pkg in packages:
+            current = pkg.get("current", {}).get("version", "")
+            upgradable = pkg.get("resolvable", {}).get("version", "")
+            latest = pkg.get("latest", {}).get("version", "")
 
-        outdated = [
-            {
-                "name": name,
-                "current": info.get("current", ""),
-                "upgradable": info.get("resolvable", ""),
-                "latest": info.get("latest", ""),
-            }
-            for name, info in packages.items()
-            if info.get("resolvable") and info.get("resolvable") != info.get("current")
-        ]
+            if upgradable and upgradable != current:
+                outdated.append({
+                    "name": pkg.get("package", ""),
+                    "current": current,
+                    "upgradable": upgradable,
+                    "latest": latest,
+                })
 
         if not outdated:
             report_lines.append("✅ All packages are up to date.\n")
@@ -81,12 +76,12 @@ def run_outdated():
             )
 
     except Exception as e:
-        report_lines.append(f"⚠️ Could not parse `flutter pub outdated` output: {e}\n")
+        report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
 
 
 def run_tests():
     """Run `flutter test` and generate a coverage report."""
-    stdout, _ = run_cmd(f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests", check=False)
+    stdout, _ = run_cmd(f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests")
 
     try:
         with open("coverage/lcov.info", "r") as f:
@@ -131,24 +126,22 @@ def run_tests():
 
 def run_analyze():
     """Run `flutter analyze` to check for issues."""
-    try:
-        stdout, stderr = run_cmd(f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis")
+    stdout, stderr = run_cmd(f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False)
 
-        if stderr:
-            report_lines.append("#### 🔍 Lint Summary\n")
-            report_lines.append("```\n" + stderr.strip() + "\n```\n")
+    report_lines.append("## Run analysis\n")
 
-        if stdout:
-            report_lines.append("#### ❗ Lint Issues\n")
-            report_lines.append("```\n" + stdout.strip() + "\n```\n")
+    if stderr:
+        report_lines.append("#### 🔍 Lint Summary\n")
+        report_lines.append("```\n" + stderr.strip() + "\n```\n")
 
-        if "•" in stdout or "warning" in stdout.lower():
-            report_lines.append("❌ **Run analysis found issues**\n")
-        else:
-            report_lines.append("✅ **No lint issues found**\n")
+    if stdout:
+        report_lines.append("#### ❗ Lint Issues\n")
+        report_lines.append("```\n" + stdout.strip() + "\n```\n")
 
-    except Exception as e:
-        report_lines.append(f"❌ **Run analysis failed:** {str(e)}\n")
+    if "•" in stdout or "warning" in stdout.lower():
+        report_lines.append("❌ **Run analysis found issues**\n")
+    else:
+        report_lines.append("✅ **No lint issues found**\n")
 
 
 def run_ci_step(label, func, env_var):
