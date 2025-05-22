@@ -44,12 +44,19 @@ def run_outdated():
 
     raw_output = stdout if stdout.strip().startswith("{") else stderr
 
+    # Debugging output  # TODO: remove this in production
+    print("🔍 RAW outdated output:")
+    print(raw_output)
+
     try:
         data = json.loads(raw_output)
-        packages = data.get("packages", {})
+        if not isinstance(data, dict):
+            raise ValueError(f"Expected dict, got {type(data).__name__}")
 
+        packages = data.get("packages")
         if not isinstance(packages, dict):
-            raise ValueError("Invalid format: 'packages' is not a dict")
+            raise ValueError("Missing or invalid 'packages' field")
+
 
         outdated = [
             {
@@ -74,12 +81,12 @@ def run_outdated():
             )
 
     except Exception as e:
-        report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
+        report_lines.append(f"⚠️ Could not parse `flutter pub outdated` output: {e}\n")
 
 
 def run_tests():
     """Run `flutter test` and generate a coverage report."""
-    output = run_cmd(f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests")
+    stdout, _ = run_cmd(f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests", check=False)
 
     try:
         with open("coverage/lcov.info", "r") as f:
@@ -119,7 +126,7 @@ def run_tests():
         report_lines.append("### 🧪 Test Coverage\n⚠️ `lcov.info` not found — coverage missing.\n")
 
     report_lines.append("### 🧪 Test Results\n")
-    report_lines.append("```\n" + output.strip() + "\n```\n")
+    report_lines.append("```\n" + stdout.strip() + "\n```\n")
 
 
 def run_analyze():
