@@ -30,7 +30,7 @@ def run_cmd(cmd, check=True, label=None):
 
     if check and result.returncode != 0:
         raise Exception(f"Command failed: {cmd}")
-    return result.stdout
+    return stdout, stderr
 
 
 def run_pub_get():
@@ -40,16 +40,17 @@ def run_pub_get():
 
 def run_outdated():
     """Run `flutter pub outdated` to check for outdated packages."""
-    result = run_cmd(f"{FLUTTER_CMD} pub outdated --json", label="Check for outdated packages")
-    with open("outdated.json", "w") as f:
-        f.write(result)
+    stdout, stderr = run_cmd(f"{FLUTTER_CMD} pub outdated --json", label="Check for outdated packages")
 
-    with open("outdated.json") as f:
-        data = json.load(f)
+    raw_output = stdout if stdout.strip().startswith("{") else stderr
 
-    packages = data.get("packages", {})
+    try:
+        data = json.loads(raw_output)
+        packages = data.get("packages", {})
 
-    if isinstance(packages, dict):
+        if not isinstance(packages, dict):
+            raise ValueError("Invalid format: 'packages' is not a dict")
+
         outdated = [
             {
                 "name": name,
@@ -71,8 +72,9 @@ def run_outdated():
             report_lines.append(
                 f"| {pkg['name']} | {pkg['current']} | {pkg['upgradable']} | {pkg['latest']} |\n"
             )
-    else:
-        report_lines.append("⚠️ Couldn’t parse `flutter pub outdated` output — unexpected format.\n")
+
+    except Exception as e:
+        report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
 
 
 def run_tests():
