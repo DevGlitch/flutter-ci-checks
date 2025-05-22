@@ -25,11 +25,15 @@ jobs:
 
       - name: Run tests with coverage
         run: |
+          echo "Running tests with coverage..."
           coverage run -m unittest discover tests
+          echo "Tests completed. Generating coverage report..."
           coverage report -m > coverage.txt
+          echo "Coverage report generated."
 
       - name: Extract coverage percentage and generate badge
         run: |
+          echo "Generating coverage badge..."
           mkdir -p badges
           PERCENT=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
           PERCENT=${PERCENT%.*}
@@ -38,12 +42,21 @@ jobs:
           else COLOR="red"
           fi
           curl -o badges/coverage.svg "https://img.shields.io/badge/Coverage-${PERCENT}%25-${COLOR}.svg"
+          echo "Coverage percentage: $PERCENT%"
+          echo "Badge successfully generated"
 
-      - name: Commit badge to current branch
+      - name: Commit coverage badge
         run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
-          git add badges/coverage.svg
-          git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
-          git push origin "HEAD:refs/heads/$BRANCH_NAME"
+          echo "Committing coverage badge..."
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          if [ -n "$(git status --porcelain badges/coverage.svg)" ]; then
+            echo "🔍 Changes detected in badge. Committing..."
+            git add badges/coverage.svg
+            git commit -m "Update coverage badge [skip ci]"
+            git push origin ${{ github.ref }}
+            echo "✅ Badge pushed to ${{ github.ref }}"
+          else
+            echo "🟢 No changes to commit"
+          fi
