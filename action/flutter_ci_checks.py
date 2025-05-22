@@ -4,7 +4,10 @@ import json
 import sys
 from packaging import version
 
-report_lines = ["# 🛠️ Flutter CI Checks Report\n"]
+report_lines = [
+    "# 🛠️ Flutter CI Checks Report\n\n",
+    "Here is a quick summary of the CI checks. Click on the sections below to see details.\n\n",
+]
 
 FLUTTER_CMD = "flutter"
 
@@ -86,6 +89,14 @@ def run_outdated():
             return
 
         report_lines.append(
+            f"### 📦 Outdated Packages Summary\n"
+            f"**{len(outdated)}** outdated package(s) found.\n\n"
+        )
+
+        report_lines.append(
+            "<details>\n<summary>List of outdated packages</summary>\n\n"
+        )
+        report_lines.append(
             "| Package | Current | Upgradable | Resolvable | Latest |\n"
         )
         report_lines.append(
@@ -102,6 +113,7 @@ def run_outdated():
         report_lines.append(
             "\nLegend: 🟢 same • 🔴 major • 🟠 minor • 🟡 patch • ⚪ other • ⚠️ unknown\n"
         )
+        report_lines.append("</details>\n\n")
 
     except Exception as e:
         report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
@@ -119,8 +131,9 @@ def run_analyze():
             report_lines.append("```\n" + stderr.strip() + "\n```\n")
 
         if stdout:
-            report_lines.append("### ❗ Lint Issues\n")
+            report_lines.append("<details>\n<summary>List of Lint Issues</summary>\n\n")
             report_lines.append("```\n" + stdout.strip() + "\n```\n")
+            report_lines.append("</details>\n\n")
     except Exception as e:
         report_lines.append(f"❌ **Run analysis failed:** {e}\n")
 
@@ -159,8 +172,9 @@ def run_tests():
     except Exception as e:
         report_lines.append(f"❌ **Run tests failed:** {e}\n")
 
-    report_lines.append("### 🧪 Test Results\n")
+    report_lines.append("<details>\n<summary>Test Results Details</summary>\n\n")
     report_lines.append("```\n" + stdout.strip() + "\n```\n")
+    report_lines.append("</details>\n\n")
 
 
 def get_coverage_feedback(coverage_percent):
