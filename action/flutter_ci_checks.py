@@ -3,7 +3,7 @@ import subprocess
 import json
 import sys
 
-report_lines = ["### 🛠️ Flutter CI Report\n"]
+report_lines = ["## 🛠️ Flutter CI Report\n"]
 
 FLUTTER_CMD = "flutter"
 
@@ -12,20 +12,18 @@ def run_cmd(cmd, check=True, label=None):
     """Run a command and capture its output."""
     if label:
         print(f"::group::{label}")
-        report_lines.append(f"#### {label}\n")
+        report_lines.append(f"### {label}\n")
 
     print(f"➤ Running: {cmd}")
     result = subprocess.run(cmd, shell=True, text=True, capture_output=True)
 
-    if result.stdout:
-        print(result.stdout)
-        report_lines.append(f"```\n{result.stdout.strip()}\n```\n")
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
 
-    if result.stderr:
-        print(result.stderr, file=sys.stderr)
-        # Only log stderr if it's meaningful (e.g. flutter analyze summary)
-        if result.stderr.strip():
-            report_lines.append(f"📦 Summary:\n```\n{result.stderr.strip()}\n```\n")
+    if stdout:
+        print(stdout)
+    if stderr:
+        print(stderr, file=sys.stderr)
 
     if label:
         print("::endgroup::")
@@ -37,15 +35,14 @@ def run_cmd(cmd, check=True, label=None):
 
 def run_pub_get():
     """Run `flutter pub get` to resolve dependencies."""
-    run_cmd(f"{FLUTTER_CMD} pub get", label="Resolve dependencies")
+    run_cmd(f"{FLUTTER_CMD} pub get", label="None")
 
 
 def run_outdated():
     """Run `flutter pub outdated` to check for outdated packages."""
-    run_cmd(
-        f"{FLUTTER_CMD} pub outdated --json > outdated.json",
-        label="Check for outdated packages",
-    )
+    result = run_cmd(f"{FLUTTER_CMD} pub outdated --json", label="Check for outdated packages")
+    with open("outdated.json", "w") as f:
+        f.write(result)
 
     with open("outdated.json") as f:
         data = json.load(f)
@@ -80,7 +77,7 @@ def run_outdated():
 
 def run_tests():
     """Run `flutter test` and generate a coverage report."""
-    run_cmd(f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests")
+    output = run_cmd(f"{FLUTTER_CMD} test --coverage --no-pub", label="Run tests")
 
     try:
         with open("coverage/lcov.info", "r") as f:
@@ -117,18 +114,26 @@ def run_tests():
             report_lines.append("⚠️ No coverage data found.\n")
 
     except FileNotFoundError:
-        report_lines.append(
-            "⚠️ `coverage/lcov.info` not found — coverage data missing.\n"
-        )
+        report_lines.append("#### 🧪 Test Coverage\n⚠️ `lcov.info` not found — coverage missing.\n")
+
+    report_lines.append("#### 🧪 Test Results\n")
+    report_lines.append("```\n" + output.strip() + "\n```\n")
 
 
 def run_analyze():
     """Run `flutter analyze` to check for issues."""
     try:
-        run_cmd(f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis")
-    except Exception as e:
+        stdout, stderr = run_cmd(f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis")
+
+        report_lines.append("#### 🔍 Lint Summary\n")
+        if stderr:
+            report_lines.append("```\n" + stderr + "\n```\n")
+
+        report_lines.append("#### ❗ Lint Issues\n")
+        report_lines.append("```\n" + stdout + "\n```\n")
+
+    except Exception:
         report_lines.append("❌ **Run analysis found issues**\n")
-        report_lines.append(f"⚠️ Internal error:\n```\n{e}\n```\n")
 
 
 def run_ci_step(label, func, env_var):
