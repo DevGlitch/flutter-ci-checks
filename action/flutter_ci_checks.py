@@ -52,6 +52,8 @@ def run_outdated():
 
         outdated = []
         for pkg in packages:
+            if not pkg or not isinstance(pkg, dict):
+                continue  # Skip any invalid package entries
             current = pkg.get("current", {}).get("version", "")
             upgradable = pkg.get("resolvable", {}).get("version", "")
             latest = pkg.get("latest", {}).get("version", "")
@@ -128,20 +130,18 @@ def run_analyze():
     """Run `flutter analyze` to check for issues."""
     stdout, stderr = run_cmd(f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False)
 
-    report_lines.append("## Run analysis\n")
-
     if stderr:
         report_lines.append("#### 🔍 Lint Summary\n")
         report_lines.append("```\n" + stderr.strip() + "\n```\n")
-
-    if stdout:
-        report_lines.append("#### ❗ Lint Issues\n")
-        report_lines.append("```\n" + stdout.strip() + "\n```\n")
 
     if "•" in stdout or "warning" in stdout.lower():
         report_lines.append("❌ **Run analysis found issues**\n")
     else:
         report_lines.append("✅ **No lint issues found**\n")
+
+    if stdout:
+        report_lines.append("#### ❗ Lint Issues\n")
+        report_lines.append("```\n" + stdout.strip() + "\n```\n")
 
 
 def run_ci_step(label, func, env_var):
