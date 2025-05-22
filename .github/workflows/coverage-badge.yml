@@ -1,0 +1,50 @@
+name: 🧰 Generate Coverage Badge
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  coverage-badge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: pip install coverage
+
+      - name: Run tests with coverage
+        run: |
+          coverage run -m unittest discover tests
+          coverage report -m > coverage.txt
+
+      - name: Extract coverage percentage and generate badge
+        run: |
+          mkdir -p badges
+          PERCENT=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
+          PERCENT=${PERCENT%.*}
+          if [ "$PERCENT" -ge 90 ]; then COLOR="brightgreen"
+          elif [ "$PERCENT" -ge 75 ]; then COLOR="orange"
+          else COLOR="red"
+          fi
+          curl -o badges/coverage.svg "https://img.shields.io/badge/Coverage-${PERCENT}%25-${COLOR}.svg"
+
+      - name: Commit badge to current branch
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          git add badges/coverage.svg
+          git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
+          git push origin "$BRANCH"
+      
