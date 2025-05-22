@@ -54,9 +54,9 @@ def run_outdated():
         for pkg in packages:
             if not pkg or not isinstance(pkg, dict):
                 continue  # Skip any invalid package entries
-            current = pkg.get("current", {}).get("version", "")
-            upgradable = pkg.get("resolvable", {}).get("version", "")
-            latest = pkg.get("latest", {}).get("version", "")
+            current = safe_version(pkg.get("current"))
+            upgradable = safe_version(pkg.get("resolvable"))
+            latest = safe_version(pkg.get("latest"))
 
             if upgradable and upgradable != current:
                 outdated.append({
@@ -188,3 +188,7 @@ def run_flutter_ci():
     run_ci_step("Run analysis", run_analyze, "ANALYZE")
     run_ci_step("Run tests", run_tests, "RUN_TESTS")
     maybe_comment_pr()
+
+
+def safe_version(val):
+    return val.get("version", "") if isinstance(val, dict) else ""
