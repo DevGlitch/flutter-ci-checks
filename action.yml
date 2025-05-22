@@ -35,7 +35,7 @@ runs:
   using: "composite"
   steps:
     - shell: bash
-      run: python3 ${{ github.action_path }}/entrypoint.py
+      run: python3 ${{ github.action_path }}/action/entrypoint.py
       env:
         CHECK_OUTDATED: ${{ inputs.check_outdated }}
         ANALYZE: ${{ inputs.analyze }}
