@@ -2,6 +2,7 @@ import os
 import subprocess
 import json
 import sys
+from packaging import version
 
 report_lines = ["# 🛠️ Flutter CI Checks Report\n"]
 
@@ -54,6 +55,11 @@ def run_outdated():
         for pkg in packages:
             if not pkg or not isinstance(pkg, dict):
                 continue  # Skip any invalid package entries
+
+            # Only check direct and dev dependencies
+            if pkg.get("kind") not in ["direct", "dev"]:
+                continue
+
             current = safe_version(pkg.get("current"))
             upgradable = safe_version(pkg.get("resolvable"))
             latest = safe_version(pkg.get("latest"))
@@ -73,9 +79,11 @@ def run_outdated():
         report_lines.append("| Package | Current | Upgradable | Latest |\n")
         report_lines.append("|---------|---------|------------|--------|\n")
         for pkg in outdated:
+            emoji = bump_emoji(pkg["current"], pkg["upgradable"])
             report_lines.append(
-                f"| {pkg['name']} | {pkg['current']} | {pkg['upgradable']} | {pkg['latest']} |\n"
+                f"| {pkg['name']} | {pkg['current']} | {pkg['upgradable']} {emoji} | {pkg['latest']} |\n"
             )
+
 
     except Exception as e:
         report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
@@ -192,3 +200,21 @@ def run_flutter_ci():
 
 def safe_version(val):
     return val.get("version", "") if isinstance(val, dict) else ""
+
+
+def bump_emoji(old, new):
+    try:
+        old_v = version.parse(old)
+        new_v = version.parse(new)
+        if new_v.major > old_v.major:
+            return "🔴"
+        elif new_v.minor > old_v.minor:
+            return "🟠"
+        elif new_v.micro > old_v.micro:
+            return "🟡"
+        elif new_v != old_v:
+            return "🟢"
+        else:
+            return ""
+    except Exception:
+        return "⚠️"
