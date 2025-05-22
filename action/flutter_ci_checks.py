@@ -41,7 +41,9 @@ def run_pub_get():
 
 def run_outdated():
     """Run `flutter pub outdated` and check for outdated packages."""
-    stdout, stderr = run_cmd(f"{FLUTTER_CMD} pub outdated --json", label="Check for outdated packages")
+    stdout, stderr = run_cmd(
+        f"{FLUTTER_CMD} pub outdated --json", label="Check for outdated packages"
+    )
     raw_output = stdout if stdout.strip().startswith("{") else stderr
 
     try:
@@ -65,12 +67,14 @@ def run_outdated():
             latest = safe_version(pkg.get("latest"))
 
             if upgradable and upgradable != current:
-                outdated.append({
-                    "name": pkg.get("package", ""),
-                    "current": current,
-                    "upgradable": upgradable,
-                    "latest": latest,
-                })
+                outdated.append(
+                    {
+                        "name": pkg.get("package", ""),
+                        "current": current,
+                        "upgradable": upgradable,
+                        "latest": latest,
+                    }
+                )
 
         if not outdated:
             report_lines.append("✅ All packages are up to date.\n")
@@ -83,7 +87,6 @@ def run_outdated():
             report_lines.append(
                 f"| {pkg['name']} | {pkg['current']} | {pkg['upgradable']} {emoji} | {pkg['latest']} |\n"
             )
-
 
     except Exception as e:
         report_lines.append(f"⚠️ Couldn’t parse `flutter pub outdated` output: {e}\n")
@@ -128,7 +131,9 @@ def run_tests():
             report_lines.append("⚠️ No coverage data found.\n")
 
     except FileNotFoundError:
-        report_lines.append("### 🧪 Test Coverage\n⚠️ `lcov.info` not found — coverage missing.\n")
+        report_lines.append(
+            "### 🧪 Test Coverage\n⚠️ `lcov.info` not found — coverage missing.\n"
+        )
 
     report_lines.append("### 🧪 Test Results\n")
     report_lines.append("```\n" + stdout.strip() + "\n```\n")
@@ -136,7 +141,9 @@ def run_tests():
 
 def run_analyze():
     """Run `flutter analyze` to check for issues."""
-    stdout, stderr = run_cmd(f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False)
+    stdout, stderr = run_cmd(
+        f"{FLUTTER_CMD} analyze --no-pub", label="Run analysis", check=False
+    )
 
     if stderr:
         report_lines.append("#### 🔍 Lint Summary\n")
