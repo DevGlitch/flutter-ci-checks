@@ -37,5 +37,4 @@ runs:
         ANALYZE: ${{ inputs.analyze }}
         RUN_TESTS: ${{ inputs.run_tests }}
         COMMENT_PR: ${{ inputs.comment_pr }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PR_NUMBER: ${{ github.event.pull_request.number || '' }}
