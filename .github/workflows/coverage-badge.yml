@@ -1,11 +1,11 @@
 name: 🧰 Generate Coverage Badge
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'action/**'
-      - 'tests/**'
+#  push:
+#    branches: [main]
+#    paths:
+#      - 'action/**'
+#      - 'tests/**'
   pull_request:
     paths:
       - 'action/**'
