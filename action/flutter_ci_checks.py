@@ -88,7 +88,7 @@ def run_outdated():
         for pkg in outdated:
             emoji = bump_emoji(pkg["current"], pkg["upgradable"])
             report_lines.append(
-                f"| {pkg['name']} | {pkg['current']} | {pkg['upgradable']} {emoji} | {pkg['latest']} |\n"
+                f"| {pkg['name']} | {pkg['current']} | {emoji} {pkg['upgradable']} | {pkg['latest']} |\n"
             )
 
     except Exception as e:
