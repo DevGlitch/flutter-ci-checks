@@ -29,7 +29,7 @@ jobs:
 
       - name: 📦 Install test dependencies
         run: |
-          pip install coverage
+          pip install coverage packaging
 
       - name: 🧪 Run tests with coverage
         run: |
