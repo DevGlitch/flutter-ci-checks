@@ -208,11 +208,15 @@ def run_ci_step(label, func, env_var):
 
 def run_flutter_ci():
     """Main function to run the Flutter CI checks."""
-    run_pub_get()
-    run_ci_step("Check for outdated packages", run_outdated, "CHECK_OUTDATED")
-    run_ci_step("Run analysis", run_analyze, "ANALYZE")
-    run_ci_step("Run tests", run_tests, "RUN_TESTS")
-    maybe_comment_pr()
+    try:
+        run_pub_get()
+        run_ci_step("Check for outdated packages", run_outdated, "CHECK_OUTDATED")
+        run_ci_step("Run analysis", run_analyze, "ANALYZE")
+        run_ci_step("Run tests", run_tests, "RUN_TESTS")
+        maybe_comment_pr()
+    except Exception as e:
+        print(f"❌ CI failed: {e}")
+        sys.exit(1)
 
 
 def comment_pr():

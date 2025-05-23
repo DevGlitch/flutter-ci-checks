@@ -110,6 +110,16 @@ class TestFlutterCiCheck(TestCase):
         ci.run_ci_step("Failing Step", fail_func, env_var="DUMMY_ON")
         self.assertTrue(any("failed" in line.lower() for line in ci.report_lines))
 
+    @patch("action.flutter_ci_checks.run_pub_get", side_effect=Exception("pub get failed"))
+    @patch("sys.exit", side_effect=SystemExit)  # Ensure sys.exit raises SystemExit
+    def test_run_flutter_ci_failure(self, mock_exit, mock_pub_get):
+        # Expecting SystemExit due to sys.exit(1)
+        with self.assertRaises(SystemExit):
+            ci.run_flutter_ci()
+
+        # Assert sys.exit(1) was called
+        mock_exit.assert_called_once_with(1)
+
     @patch("subprocess.run")
     def test_run_cmd_failure(self, mock_run):
         mock_run.return_value.returncode = 1
@@ -178,6 +188,28 @@ class TestFlutterCiCheck(TestCase):
         ci.report_lines = []
         ci.run_analyze()
         self.assertTrue(any("analyze blew up" in line for line in ci.report_lines))
+
+    @patch("action.flutter_ci_checks.run_cmd")
+    def test_no_issues_found(self, mock_run_cmd):
+        # Mock stderr to simulate no issues found
+        mock_run_cmd.return_value = ("", "0 issues found")
+        ci.report_lines = []
+
+        ci.run_analyze()
+
+        # Assert the correct message is added to the report
+        self.assertIn("✅ No issues found.", "".join(ci.report_lines))
+
+    @patch("action.flutter_ci_checks.run_cmd")
+    def test_issues_found(self, mock_run_cmd):
+        # Mock stderr to simulate some issues found
+        mock_run_cmd.return_value = ("", "5 issues found")
+        ci.report_lines = []
+
+        ci.run_analyze()
+
+        # Assert the correct message is added to the report
+        self.assertIn("⚠️ 5 issues found.", "".join(ci.report_lines))
 
     def test_bump_emoji(self):
         self.assertEqual(ci.bump_emoji("1.0.0", "2.0.0"), "🔴")
