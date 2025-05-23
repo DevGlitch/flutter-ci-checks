@@ -90,7 +90,9 @@ def run_outdated():
             return
 
         report_lines.append("#### 📦 Outdated Packages Summary\n")
-        report_lines.append(f"```\n ⚠️ {len(outdated)} outdated package(s) found.\n```\n\n")
+        report_lines.append(
+            f"```\n ⚠️ {len(outdated)} outdated package(s) found.\n```\n\n"
+        )
         report_lines.append(
             "<details>\n<summary>List of outdated packages</summary>\n\n"
         )
