@@ -63,17 +63,19 @@ jobs:
           
           if [ -n "$(git status --porcelain badges/coverage.svg)" ]; then
             echo "🔍 Changes detected in badge. Committing..."
-            # Determine the branch to push to
+            git add badges/coverage.svg
+            git commit -m "Update coverage badge [skip ci]"
+
+            # Determine correct push target
             if [ "${{ github.event_name }}" = "pull_request" ]; then
               BRANCH="${{ github.head_ref }}"
             else
               BRANCH="${{ github.ref_name }}"
             fi
-            git add badges/coverage.svg
-            git commit -m "Update coverage badge [skip ci]"
             echo "🔄 Pushing changes to $BRANCH"
-            git push origin ${{ github.ref }}
+            git push origin HEAD:$BRANCH
             echo "✅ Badge pushed to $BRANCH"
           else
             echo "🟢 No changes to commit"
           fi
+      
