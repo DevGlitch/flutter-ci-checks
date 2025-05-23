@@ -88,11 +88,7 @@ def run_outdated():
             report_lines.append("✅ All packages are up to date.\n")
             return
 
-        report_lines.append(
-            f"### 📦 Outdated Packages Summary\n"
-            f"**{len(outdated)}** outdated package(s) found.\n\n"
-        )
-
+        report_lines.append(f"```\n ⚠️ {len(outdated)}** outdated package(s) found.\n```\n\n")
         report_lines.append(
             "<details>\n<summary>List of outdated packages</summary>\n\n"
         )
@@ -161,7 +157,7 @@ def run_tests():
             coverage_percent = (covered_lines / total_lines) * 100
             color, msg = get_coverage_feedback(coverage_percent)
             report_lines.append("### 🧪 Test Coverage\n")
-            report_lines.append(f"**{coverage_percent:.2f}%** {color} {msg}\n")
+            report_lines.append(f"```\n**{coverage_percent:.2f}%** {color} {msg}\n```\n\n")
         else:
             report_lines.append("⚠️ No coverage data found.\n")
 
