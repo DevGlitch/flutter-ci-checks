@@ -63,7 +63,7 @@ jobs:
             echo "🔍 Changes detected in badge. Committing..."
             git add badges/coverage.svg
             git commit -m "Update coverage badge [skip ci]"
-            git push origin ${{ github.ref }}
+            git push
             echo "✅ Badge pushed to ${{ github.ref }}"
           else
             echo "🟢 No changes to commit"
