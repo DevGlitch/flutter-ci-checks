@@ -1,6 +1,7 @@
 import os
 import subprocess
 import json
+import re
 import sys
 from packaging import version
 
@@ -88,7 +89,7 @@ def run_outdated():
             report_lines.append("✅ All packages are up to date.\n")
             return
 
-        report_lines.append(f"```\n ⚠️ {len(outdated)}** outdated package(s) found.\n```\n\n")
+        report_lines.append(f"```\n ⚠️ {len(outdated)} outdated package(s) found.\n```\n\n")
         report_lines.append(
             "<details>\n<summary>List of outdated packages</summary>\n\n"
         )
@@ -124,11 +125,19 @@ def run_analyze():
 
         if stderr:
             report_lines.append("### 🔍 Lint Summary\n")
-            report_lines.append("```\n" + stderr.strip() + "\n```\n")
+            match = re.search(r"(\d+)\s+issues? found", stderr)
+            if match:
+                num_issues = int(match.group(1))
+                if num_issues == 0:
+                    report_lines.append("```\n✅ No issues found.\n```\n")
+                else:
+                    report_lines.append(f"```\n⚠️ {num_issues} issues found.\n```\n")
+            else:
+                report_lines.append("```\n⚠️ Unknown number of issues found.\n```\n")
 
         if stdout:
             report_lines.append("<details>\n<summary>List of Lint Issues</summary>\n\n")
-            report_lines.append("```\n" + stdout.strip() + "\n```\n")
+            report_lines.append(f"```\n{stdout.strip()}\n```\n")
             report_lines.append("</details>\n\n")
     except Exception as e:
         report_lines.append(f"❌ **Run analysis failed:** {e}\n")
@@ -157,7 +166,7 @@ def run_tests():
             coverage_percent = (covered_lines / total_lines) * 100
             color, msg = get_coverage_feedback(coverage_percent)
             report_lines.append("### 🧪 Test Coverage\n")
-            report_lines.append(f"```\n**{coverage_percent:.2f}%** {color} {msg}\n```\n\n")
+            report_lines.append(f"```\n{coverage_percent:.2f}% {color} {msg}\n```\n\n")
         else:
             report_lines.append("⚠️ No coverage data found.\n")
 
